@@ -1,3 +1,5 @@
 m1n1/build/
 __pycache__/
 *.pyc
+kernel/linux/
+kernel/out/
