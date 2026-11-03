@@ -60,3 +60,22 @@ works):
    partition in Disk Utility, and set macOS as the startup disk again.
 
 Follow https://asahilinux.org/blog/ for real M4 support.
+
+## Kernel (built)
+
+`kernel/build.sh` builds Linux 7.4-rc1 from AsahiLinux/linux `asahi-soc/for-next`
+plus `kernel/m4-air.config`. Prebuilt outputs are in `kernel/prebuilt/`:
+`Image.gz`, `t8132-j713.dtb` (13-inch Air), `t8132-j715.dtb` (15-inch Air),
+the full `config`, and `SHA256SUMS`. Not tested on hardware.
+
+The upstream M4 device tree currently describes only CPUs, interrupt
+controller, UART, pinctrl, I2C, watchdog, power manager, keyboard backlight
+PWM and a firmware framebuffer. **No SSD, USB, PCIe/Wi-Fi, keyboard or
+trackpad yet.** Expect a framebuffer console with no input at best.
+
+Proxy boot (from a second Mac, Air connected via USB-C, m1n1 in proxy mode):
+
+```sh
+cd m1n1/proxyclient
+python3 tools/linux.py ../../kernel/prebuilt/Image.gz ../../kernel/prebuilt/t8132-j713.dtb
+```
