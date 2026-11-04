@@ -33,6 +33,8 @@ etc/wireplumber/wireplumber.conf.d/80-j713-protected.conf
 etc/wireplumber/wireplumber.conf.d/81-j713-busy-discovery.conf
 etc/wireplumber/wireplumber.conf.d/82-j713-protected-default.conf
 etc/systemd/user/wireplumber.service.d/80-j713-audio-ready.conf
+# Hides the raw (unprotected) speaker node from default-output selection
+usr/share/wireplumber/scripts/default-nodes/j713-protected.lua
 # System settings: no watchdog reboot, persistent logs, no suspend/lid sleep, zram
 etc/systemd/system.conf.d/90-m4.conf
 etc/systemd/journald.conf.d/90-m4.conf
