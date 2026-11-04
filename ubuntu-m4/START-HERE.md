@@ -81,13 +81,17 @@ sudo journalctl -b -u gdm -u m4-gpu -u m4-video --no-pager | tail -80
 
 ## Trying GPU acceleration
 
+By default the M4 GPU is hidden from GNOME and apps: Ubuntu's own Asahi
+graphics drivers only know M1/M2 GPUs, and letting them touch the M4 GPU can
+hang it until the Mac resets. Only Omarchy-M4-Native's M4 Mesa may use it:
+
 ```sh
 sudo ubuntu-m4-gpu on     # then log out and back in
 sudo ubuntu-m4-gpu status
 ```
 
-If GNOME fails to come back (black screen or login loop): Control + Option +
-F3, log in, `sudo ubuntu-m4-gpu off`, then `sudo systemctl restart gdm`.
+If GNOME fails to come back (black screen or login loop): restart, press
+Control + Option + F3, log in, run `sudo ubuntu-m4-gpu off`, then restart.
 
 ## Going back to macOS
 

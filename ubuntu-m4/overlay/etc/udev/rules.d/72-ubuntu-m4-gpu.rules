@@ -1,0 +1,8 @@
+# The M4 GPU (asahi_m4 on platform device 302600000.gpu) may only be driven by
+# Omarchy-M4-Native's Mesa in /opt/m4-mesa. Ubuntu's own Mesa and Vulkan Asahi
+# drivers target M1/M2 GPUs; if GNOME or an app opens the M4 GPU with them, the
+# GPU can hang and the hardware watchdog resets the Mac. Omarchy avoids this by
+# pinning its compositor to card0 (AQ_DRM_DEVICES); here the device is hidden:
+# no seat (so logind and GNOME never take it), ignored by Mutter, root-only.
+# Runs after 70-uaccess/71-seat and before 73-seat-late applies seat ACLs.
+SUBSYSTEM=="drm", KERNELS=="302600000.gpu", TAG-="uaccess", TAG-="seat", TAG-="master-of-seat", TAG+="mutter-device-ignore", MODE="0600", OWNER="root", GROUP="root"

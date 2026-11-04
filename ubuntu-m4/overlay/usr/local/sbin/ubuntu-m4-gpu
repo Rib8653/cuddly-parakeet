@@ -1,24 +1,35 @@
 #!/bin/bash
-# Toggle EXPERIMENTAL M4 GPU acceleration for GNOME Shell.
+# Toggle EXPERIMENTAL M4 GPU acceleration for your GNOME session.
 #   sudo ubuntu-m4-gpu on|off|status
-# Takes effect after logging out (or restarting). If GNOME then fails to
-# start, press Ctrl+Option+F3, log in, and run: sudo ubuntu-m4-gpu off
+# Takes effect after logging out and back in. If GNOME then fails to start,
+# restart, log in on Control+Option+F3, and run: sudo ubuntu-m4-gpu off
 set -euo pipefail
 env=/etc/ubuntu-m4/gnome-gpu.env
+rule=/etc/udev/rules.d/74-ubuntu-m4-gpu-optin.rules
+need_root() { [ "$(id -u)" = 0 ] || { echo "Run with sudo." >&2; exit 1; }; }
+reload() { udevadm control --reload; udevadm trigger --subsystem-match=drm --action=change; }
 case "${1:-status}" in
   on)
-    [ "$(id -u)" = 0 ] || { echo "Run with sudo." >&2; exit 1; }
+    need_root
     systemctl is-active --quiet m4-gpu.service || {
       echo "m4-gpu.service is not active; the M4 GPU did not start this boot." >&2
       echo "See: journalctl -b -u m4-gpu" >&2; exit 1; }
+    user=${SUDO_USER:-}
+    [ -n "$user" ] && [ "$user" != root ] || { echo "Run as your own user with sudo." >&2; exit 1; }
     install -m 0644 /etc/ubuntu-m4/gnome-gpu.env.example "$env"
-    echo "M4 GPU for GNOME: ON. Log out and back in (or restart) to apply." ;;
+    # Render node only (never card1's KMS node), for the render group only.
+    printf '%s\n' 'SUBSYSTEM=="drm", KERNEL=="renderD*", KERNELS=="302600000.gpu", MODE="0660", GROUP="render"' > "$rule"
+    usermod -aG render "$user"
+    reload
+    echo "M4 GPU: ON for $user. Log out and back in to apply." ;;
   off)
-    [ "$(id -u)" = 0 ] || { echo "Run with sudo." >&2; exit 1; }
-    rm -f "$env"
-    echo "M4 GPU for GNOME: OFF (software rendering). Log out or restart to apply." ;;
+    need_root
+    rm -f "$env" "$rule"
+    reload
+    echo "M4 GPU: OFF (software rendering). Log out and back in to apply." ;;
   status)
-    if [ -e "$env" ]; then echo "GNOME GPU: on"; else echo "GNOME GPU: off (software rendering)"; fi
-    printf 'm4-gpu.service: '; systemctl is-active m4-gpu.service || true ;;
+    if [ -e "$env" ]; then echo "GPU session: on"; else echo "GPU session: off (software rendering)"; fi
+    printf 'm4-gpu.service: '; systemctl is-active m4-gpu.service || true
+    ls -l /dev/dri/ 2>/dev/null || true ;;
   *) echo "usage: ubuntu-m4-gpu on|off|status" >&2; exit 2 ;;
 esac

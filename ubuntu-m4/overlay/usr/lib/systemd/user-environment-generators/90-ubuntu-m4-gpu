@@ -1,0 +1,9 @@
+#!/bin/sh
+# Session-wide environment for the opt-in M4 GPU (sudo ubuntu-m4-gpu on).
+# Applies only to users in the "render" group (the opt-in adds you), never to
+# the GDM greeter, so every app in your session uses the M4 Mesa and none
+# falls back to Ubuntu's M1/M2-only Asahi driver.
+env=/etc/ubuntu-m4/gnome-gpu.env
+[ -r "$env" ] || exit 0
+id -nG 2>/dev/null | tr ' ' '\n' | grep -qx render || exit 0
+grep -E '^[A-Z_][A-Z0-9_]*=' "$env"

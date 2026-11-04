@@ -22,6 +22,14 @@ if [ "$($SUDO docker info --format '{{.Architecture}}')" != aarch64 ]; then
   echo "Note: Docker is not arm64; the build will use slow emulation." >&2
 fi
 
+# --patch-kit: update an existing ./work/kit with the current overlay only.
+if [ "${1:-}" = --patch-kit ]; then
+  [ -d "$HERE/work/kit/os" ] || { echo "No kit at $HERE/work/kit" >&2; exit 1; }
+  exec $SUDO docker run --rm --privileged \
+    -v "$HERE:/ubuntu-m4:ro" -v "$HERE/work/kit:/kit" \
+    ubuntu:26.04 bash -c 'apt-get update -q >/dev/null && apt-get install -y -q python3 e2fsprogs >/dev/null && /ubuntu-m4/patch-kit.sh /kit /tmp/patch'
+fi
+
 # Build inside a Docker volume (the 16 GB disk images must live on a real
 # Linux filesystem for loop mounts), then copy only the finished kit out.
 VOL=ubuntu-m4-work

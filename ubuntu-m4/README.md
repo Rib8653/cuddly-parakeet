@@ -24,6 +24,9 @@ On any other Linux with Docker, including Omarchy on the M4 Air itself
 ./build-in-docker.sh       # output: ./work/kit
 ```
 
+To update an existing kit after `git pull` without rebuilding Ubuntu:
+`./build-in-docker.sh --patch-kit` (or `sudo ./patch-kit.sh work/kit` on Linux).
+
 `build.sh` downloads update.4 and verifies it against the release manifest
 (pinned), extracts the Omarchy root image, bootstraps Ubuntu (`bootstrap.sh`),
 applies the M4 layer (`port-m4-layer.sh`) and writes the kit (`make-kit.sh`).
@@ -35,7 +38,7 @@ applies the M4 layer (`port-m4-layer.sh`) and writes the kit (`make-kit.sh`).
 | m1n1 stage 1, kernel, devicetree, initramfs | update.4 `installer-macos.tar.gz` and OS zip `boot/` | Unchanged; the installer verifies their pinned hashes |
 | Installer (macOS) | update.4 | Unchanged; only `installer_data.json` names and `Install.command` messages differ |
 | Files in [`m4-files.txt`](m4-files.txt) | update.4 `root.ext4` | Copied byte-for-byte and re-verified with sha256 |
-| Ubuntu-specific settings | [`overlay/`](overlay) | No suspend, GDM ordering, opt-in GPU session, apt pins |
+| Ubuntu-specific settings | [`overlay/`](overlay) | No suspend, GDM ordering, M4 GPU hidden from Ubuntu's M1/M2 drivers, opt-in GPU session, apt pins |
 | Browser | Ubuntu archive / Mozilla APT | GNOME Web always; Firefox (.deb) when packages.mozilla.org is reachable |
 
 Why it can work: the update.4 initramfs only requires an ext4 root with
