@@ -1,0 +1,45 @@
+# Files copied byte-for-byte from the Omarchy-M4-Native v0.1.0-alpha.1-update.4
+# root image (root.ext4 sha256 995b5c2a...665a). Paths are relative to /.
+# A trailing / copies the whole directory tree.
+#
+# Kernel modules for the pinned kernel 7.1.9-m4-gpu-backport-20261008
+usr/lib/modules/7.1.9-m4-gpu-backport-20261008/
+# M4 GPU (G16) module and its runtime checksum
+opt/m4-gpu/
+# M4 Mesa (EGL/GLES/GBM with the Asahi G16 driver), self-contained
+opt/m4-mesa/
+# Hardware video decode (AVD) modules, Mesa and VA-API driver
+opt/m4-video/
+usr/lib/firmware/apple/avd-start-probe.bin
+usr/local/bin/m4-gpu-start
+usr/local/bin/m4-video-start
+etc/modprobe.d/omarchy-m4-gpu.conf
+etc/systemd/system/m4-gpu.service
+etc/systemd/system/m4-video.service
+etc/omarchy/j713-video-manifest.json
+# Protected speaker stack (pinned; integrity-checked at every boot)
+etc/omarchy/j713-audio-manifest.json
+usr/lib/omarchy/j713-audio/
+usr/lib/omarchy/m4-j713-audio-ready.py
+usr/lib/omarchy/m4-j713-audio-register.py
+usr/lib/speakersafetyd-j713
+usr/share/speakersafetyd/
+usr/share/asahi-audio/j713/
+usr/share/alsa/ucm2/conf.d/macaudio/Apple J713.conf
+usr/share/alsa/ucm2/conf.d/macaudio/J713-HiFi.conf
+usr/lib/systemd/system/m4-j713-audio-register.service
+usr/lib/systemd/system/speakersafetyd-j713.service
+etc/wireplumber/wireplumber.conf.d/80-j713-protected.conf
+etc/wireplumber/wireplumber.conf.d/81-j713-busy-discovery.conf
+etc/wireplumber/wireplumber.conf.d/82-j713-protected-default.conf
+etc/systemd/user/wireplumber.service.d/80-j713-audio-ready.conf
+# System settings: no watchdog reboot, persistent logs, no suspend/lid sleep, zram
+etc/systemd/system.conf.d/90-m4.conf
+etc/systemd/journald.conf.d/90-m4.conf
+etc/systemd/logind.conf.d/90-m4-ram.conf
+etc/systemd/zram-generator.conf.d/90-omarchy.conf
+#
+# Deliberately NOT copied (Omarchy/Arch specific): Hyprland/SDDM/uwsm session
+# files, Brave/Widevine owner options, omarchy-provision-owner first-boot form,
+# m4-boot-status (points at the Arch update channel), m4-channel-connect and
+# omarchy-m4-update (pacman package channel).

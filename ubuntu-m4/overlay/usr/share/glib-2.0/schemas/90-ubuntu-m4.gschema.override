@@ -1,0 +1,10 @@
+# Ubuntu M4: never suspend (unsupported on M4), and don't try on lid close.
+[org.gnome.settings-daemon.plugins.power]
+sleep-inactive-ac-type='nothing'
+sleep-inactive-battery-type='nothing'
+power-button-action='interactive'
+lid-close-ac-action='nothing'
+lid-close-battery-action='nothing'
+
+[org.gnome.desktop.session]
+idle-delay=uint32 600

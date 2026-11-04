@@ -1,0 +1,24 @@
+#!/bin/bash
+# Toggle EXPERIMENTAL M4 GPU acceleration for GNOME Shell.
+#   sudo ubuntu-m4-gpu on|off|status
+# Takes effect after logging out (or restarting). If GNOME then fails to
+# start, press Ctrl+Option+F3, log in, and run: sudo ubuntu-m4-gpu off
+set -euo pipefail
+env=/etc/ubuntu-m4/gnome-gpu.env
+case "${1:-status}" in
+  on)
+    [ "$(id -u)" = 0 ] || { echo "Run with sudo." >&2; exit 1; }
+    systemctl is-active --quiet m4-gpu.service || {
+      echo "m4-gpu.service is not active; the M4 GPU did not start this boot." >&2
+      echo "See: journalctl -b -u m4-gpu" >&2; exit 1; }
+    install -m 0644 /etc/ubuntu-m4/gnome-gpu.env.example "$env"
+    echo "M4 GPU for GNOME: ON. Log out and back in (or restart) to apply." ;;
+  off)
+    [ "$(id -u)" = 0 ] || { echo "Run with sudo." >&2; exit 1; }
+    rm -f "$env"
+    echo "M4 GPU for GNOME: OFF (software rendering). Log out or restart to apply." ;;
+  status)
+    if [ -e "$env" ]; then echo "GNOME GPU: on"; else echo "GNOME GPU: off (software rendering)"; fi
+    printf 'm4-gpu.service: '; systemctl is-active m4-gpu.service || true ;;
+  *) echo "usage: ubuntu-m4-gpu on|off|status" >&2; exit 2 ;;
+esac

@@ -1,0 +1,7 @@
+# The M4 boot chain uses Omarchy-M4-Native's pinned kernel, loaded by m1n1
+# from the EFI partition. Ubuntu kernels, bootloaders and snapd must never be
+# installed: they cannot boot this Mac and snapd needs kernel features the
+# pinned kernel may lack.
+Package: linux-image-* linux-generic* linux-headers-* linux-modules-* grub-* shim* flash-kernel snapd
+Pin: release *
+Pin-Priority: -1
