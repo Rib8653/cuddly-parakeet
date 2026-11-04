@@ -1,0 +1,59 @@
+#!/bin/bash
+# Ubuntu M4 boot diagnostics, readable and controllable from macOS.
+# Runs early at every boot (ubuntu-m4-diag.service):
+#  1. Saves the PREVIOUS boot's full log to the EFI partition (FAT, which
+#     macOS can mount): <EFI>/ubuntu-m4/logs/boot-NNN.txt (last 8 kept).
+#  2. Reads <EFI>/ubuntu-m4/diag.txt and stops listed units from starting
+#     this boot ("skip gdm.service"), so a crash can be bisected without
+#     reinstalling.
+set -u
+efi=/boot/efi
+dir=$efi/ubuntu-m4
+log() { echo "ubuntu-m4-diag: $*"; }
+mountpoint -q "$efi" || { log "EFI partition not mounted at $efi"; exit 0; }
+mkdir -p "$dir/logs" || exit 0
+
+# 1. Previous boot's log
+n=$(cat "$dir/logs/.counter" 2>/dev/null || echo 0); n=$((n + 1))
+echo "$n" > "$dir/logs/.counter"
+out=$(printf '%s/logs/boot-%03d.txt' "$dir" "$n")
+{
+  echo "# Ubuntu M4: log of the boot BEFORE boot $n (saved $(date -u +%FT%TZ))"
+  echo "# --- journalctl --list-boots"
+  journalctl --list-boots --no-pager 2>&1 | tail -n 12
+  echo "# --- journalctl -b -1 (previous boot, kernel + services)"
+  journalctl -b -1 --no-pager -o short-monotonic 2>&1 || echo "(no previous boot recorded)"
+} > "$out.tmp"
+mv "$out.tmp" "$out"
+ls -1 "$dir/logs"/boot-*.txt 2>/dev/null | head -n -8 | xargs -r rm -f
+sync -f "$out" 2>/dev/null || sync
+log "saved previous boot log to $out"
+
+# 2. Units to skip this boot
+cfg=$dir/diag.txt
+if [ ! -f "$cfg" ]; then
+  cat > "$cfg" <<'TXT'
+# Ubuntu M4 diagnostics. Edit this file from macOS, then boot Ubuntu M4.
+# One "skip <unit>" per line stops that service from starting on the next
+# boot (remove the # to enable a line). Logs of each boot are saved in the
+# logs/ folder next to this file at the following boot.
+#
+# skip gdm.service                     (GNOME login screen)
+# skip m4-gpu.service                  (M4 GPU module)
+# skip m4-video.service                (M4 video decoder)
+# skip m4-j713-audio-register.service  (speaker drivers)
+# skip speakersafetyd-j713.service     (speaker protection)
+# skip NetworkManager.service          (Wi-Fi)
+# skip bluetooth.service
+# skip power-profiles-daemon.service
+# skip ModemManager.service
+TXT
+fi
+tr -d '\r' < "$cfg" | while read -r word unit _; do
+  [ "$word" = skip ] && [ -n "${unit:-}" ] || continue
+  case "$unit" in *.service|*.socket|*.timer|*.target) ;; *) unit=$unit.service ;; esac
+  systemctl mask --runtime "$unit" >/dev/null 2>&1
+  systemctl stop --no-block "$unit" >/dev/null 2>&1
+  log "skipping $unit this boot (from diag.txt)"
+done
+exit 0

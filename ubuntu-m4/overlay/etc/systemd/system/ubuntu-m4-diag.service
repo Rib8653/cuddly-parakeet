@@ -1,0 +1,14 @@
+[Unit]
+Description=Ubuntu M4 boot diagnostics (logs and skips on the EFI partition)
+DefaultDependencies=no
+Requires=boot-efi.mount systemd-journald.service
+After=boot-efi.mount local-fs.target systemd-journald.service systemd-journal-flush.service
+Before=sysinit.target gdm.service m4-gpu.service m4-video.service m4-j713-audio-register.service speakersafetyd-j713.service NetworkManager.service bluetooth.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ubuntu-m4-diag
+TimeoutStartSec=60
+
+[Install]
+WantedBy=sysinit.target
