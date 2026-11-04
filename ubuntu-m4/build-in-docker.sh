@@ -1,11 +1,38 @@
 #!/bin/bash
-# Run build.sh inside an Ubuntu 26.04 container. Use this on non-Debian hosts,
-# e.g. Omarchy (Arch) on the M4 Air itself, where it runs natively on arm64.
-#   ./build-in-docker.sh            # output: ./work/kit
+# Run build.sh inside an Ubuntu 26.04 container.
+# Works on macOS (Docker Desktop or Colima, Apple Silicon) and on non-Debian
+# Linux such as Omarchy. Output: ./work/kit
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
-command -v docker >/dev/null || { echo "Install Docker first." >&2; exit 1; }
-sudo systemctl start docker 2>/dev/null || true
-# --privileged: the build loop-mounts the root filesystem images.
-exec sudo docker run --rm --privileged -v "$HERE:/ubuntu-m4" -w /ubuntu-m4 \
-  ubuntu:26.04 bash -c 'apt-get update -q && ./build.sh /ubuntu-m4/work'
+command -v docker >/dev/null || { echo "Install Docker Desktop (or Colima) first." >&2; exit 1; }
+
+SUDO=sudo
+if [ "$(uname -s)" = Darwin ]; then
+  SUDO=   # Docker on macOS runs as your user
+else
+  sudo systemctl start docker 2>/dev/null || true
+fi
+if ! $SUDO docker info >/dev/null 2>&1; then
+  echo "The Docker engine is not running." >&2
+  echo "  Docker Desktop: open -a Docker   (wait for it to say 'running', then retry)" >&2
+  echo "  Colima:         colima start --cpu 4 --memory 8 --disk 80" >&2
+  exit 1
+fi
+if [ "$($SUDO docker info --format '{{.Architecture}}')" != aarch64 ]; then
+  echo "Note: Docker is not arm64; the build will use slow emulation." >&2
+fi
+
+# Build inside a Docker volume (the 16 GB disk images must live on a real
+# Linux filesystem for loop mounts), then copy only the finished kit out.
+VOL=ubuntu-m4-work
+$SUDO docker volume create "$VOL" >/dev/null
+mkdir -p "$HERE/work"
+exec $SUDO docker run --rm --privileged \
+  -v "$HERE:/ubuntu-m4:ro" -v "$VOL:/work" -v "$HERE/work:/out" \
+  ubuntu:26.04 bash -c '
+    set -e
+    apt-get update -q
+    /ubuntu-m4/build.sh /work
+    rm -rf /out/kit && cp -a /work/kit /out/kit
+    echo "Kit copied to ubuntu-m4/work/kit"
+    echo "Free the build space afterwards with: docker volume rm ubuntu-m4-work"'
