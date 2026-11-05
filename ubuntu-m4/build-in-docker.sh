@@ -6,9 +6,29 @@ set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 command -v docker >/dev/null || { echo "Install Docker Desktop (or Colima) first." >&2; exit 1; }
 
+# Refuse a source tree with stray files (e.g. iCloud/Finder "name 2" copies):
+# the overlay is copied into the image verbatim.
+if command -v git >/dev/null && git -C "$HERE" rev-parse --git-dir >/dev/null 2>&1; then
+  stray=$(git -C "$HERE" status --porcelain --untracked-files=all -- overlay m4-files.txt '*.sh' START-HERE.md || true)
+  if [ -n "$stray" ]; then
+    echo "These files differ from the repository (often iCloud/Finder duplicates):" >&2
+    echo "$stray" | head -20 >&2
+    echo "Use a fresh clone outside iCloud Drive (see START-HERE.md / README)." >&2
+    exit 1
+  fi
+fi
+
 SUDO=sudo
 if [ "$(uname -s)" = Darwin ]; then
   SUDO=   # Docker on macOS runs as your user
+  case "$HERE" in
+    "$HOME/Desktop"*|"$HOME/Documents"*|"$HOME/Library/Mobile Documents"*)
+      echo "This folder is in Desktop/Documents/iCloud Drive. iCloud can make files" >&2
+      echo "unreadable to Docker ('Resource deadlock avoided') and adds '... 2' copies." >&2
+      echo "Clone the repository somewhere else, e.g.:" >&2
+      echo "  mkdir -p ~/src && cd ~/src && git clone -b asahi-m4 https://github.com/rib8653/cuddly-parakeet.git" >&2
+      exit 1 ;;
+  esac
 else
   sudo systemctl start docker 2>/dev/null || true
 fi
